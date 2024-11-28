@@ -1,0 +1,39 @@
+name: Run K6 Load Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  k6_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install K6
+        run: |
+          curl -s https://dl.k6.io/key.gpg | sudo tee /etc/apt/trusted.gpg.d/k6.asc
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt update
+          sudo apt install k6
+
+      - name: Install dependencies
+        run: |
+          sudo apt install -y nodejs npm
+          npm install
+
+      - name: Run K6 Load Test
+        run: |
+          k6 run src/test.js # Aqui você executa o seu teste K6 (ajuste o caminho do seu script, se necessário)
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-results
+          path: ./src/output/index.html
