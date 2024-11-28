@@ -4,12 +4,15 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { Trend } from 'k6/metrics';
 
-export const getCoinRequisitionDuration = new Trend('get_coinprice', true);
+export const getCryptoRequisitionDuration = new Trend(
+  'get_crypto_duration',
+  true
+);
 
 export const options = {
   thresholds: {
-    http_req_failed: ['rate<0.12'], // Taxa de falhas de requisições deve ser inferior a 12%
-    http_req_duration: ['p(95)<5700'] // Duração média das requisições deve ser inferior a 5,7 segundos (5700ms)
+    http_req_failed: ['rate<0.12'],
+    http_req_duration: ['p(95)<5700']
   },
   stages: [
     { duration: '10s', target: 10 },
@@ -34,7 +37,9 @@ export function handleSummary(data) {
 }
 
 export default function () {
-  const baseUrl = 'https://api.coindesk.com/v1/bpi/';
+  const baseUrl = 'https://api.coinlore.net/api/tickers/';
+
+  const cryptoIds = '90,2710';
 
   const params = {
     headers: {
@@ -42,13 +47,14 @@ export default function () {
     }
   };
 
-  const OK = 200;
+  const res = http.get(
+    `${baseUrl}?id=${cryptoIds}`,
+    params
+  );
 
-  const res = http.get(`${baseUrl}currentprice.json`, params);
-
-  getCoinRequisitionDuration.add(res.timings.duration);
+  getCryptoRequisitionDuration.add(res.timings.duration);
 
   check(res, {
-    'GET Current Bitcoin Price - Status 200': () => res.status === OK
+    'GET Crypto Data - Status 200': () => res.status === 200
   });
 }
